@@ -20,7 +20,6 @@ def api_check():
 
     cookies = {'.ROBLOSECURITY': cookie}
     
-    # Ambil X-CSRF-Token terlebih dahulu agar request inventory & transaksi lolos dari proteksi Roblox
     session = requests.Session()
     session.cookies.update(cookies)
     
@@ -37,7 +36,7 @@ def api_check():
     }
 
     try:
-        # 1. Validasi Autentikasi User Utama
+        # 1. Autentikasi User
         user_res = session.get('https://users.roblox.com/v1/users/authenticated', headers=headers)
         if user_res.status_code != 200:
             return jsonify({'result': {'status': 'invalid'}})
@@ -47,7 +46,7 @@ def api_check():
         username = user_data.get('name')
         display_name = user_data.get('displayName')
 
-        # 2. Ambil Avatar Headshot
+        # 2. Avatar Headshot
         avatar_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=150x150&format=Png&isCircular=false"
         headshot_res = session.get(avatar_url, headers=headers)
         if headshot_res.status_code == 200:
@@ -57,7 +56,7 @@ def api_check():
 
         model_3d_url = f"https://www.roblox.com/users/{user_id}/profile"
 
-        # 3. Saldo Robux & Pending Robux
+        # 3. Saldo & Pending
         economy_res = session.get(f'https://economy.roblox.com/v1/users/{user_id}/currency', headers=headers)
         robux = economy_res.json().get('robux', 0) if economy_res.status_code == 200 else 0
 
@@ -84,7 +83,7 @@ def api_check():
             ts_data = ts_res.json()
             has_a2f = any(ts_data.get(k, False) for k in ['isAuthenticatorEnabled', 'isEmailEnabled', 'isSmsEnabled'])
 
-        # 5. Cek Kepemilikan Item Katalog
+        # 5. Cek Item Katalog menggunakan Inventory v1/v2 endpoint umum
         def check_item_owned(asset_id):
             inv = session.get(f'https://inventory.roblox.com/v1/users/{user_id}/items/asset/{asset_id}', headers=headers)
             if inv.status_code == 200:
@@ -104,14 +103,15 @@ def api_check():
         vfx_owned = check_item_owned(98436573)
         limited_owned = check_item_owned(45484837)
 
-        # 6. Membaca Animasi dari Avatar yang Sedang Digunakan (Equipped)
+        # 6. Membaca Asset Animasi / Bundle yang Terpasang di Avatar
         animations = []
         avatar_wearing = session.get(f'https://avatar.roblox.com/v1/users/{user_id}/avatar', headers=headers)
         if avatar_wearing.status_code == 200:
-            asset_ids = avatar_wearing.json().get('assetIds', [])
-            for aid in asset_ids:
-                icon = get_asset_icon(aid)
-                animations.append({"name": f"Asset ID: {aid}", "icon": icon})
+            assets_list = avatar_wearing.json().get('assets', [])
+            for asset in assets_list:
+                aname = asset.get('name', 'Asset Item')
+                said = asset.get('id')
+                animations.append({"name": aname, "icon": get_asset_icon(said)})
 
         if not animations:
             animations.append({"name": "No Active Animations", "icon": avatar_url})
@@ -121,7 +121,7 @@ def api_check():
         vfx_data = {"name": "VFX / Particle Effect", "status": vfx_owned, "icon": get_asset_icon(98436573)}
         limited_data = {"name": "Limited Collectible", "status": limited_owned, "icon": get_asset_icon(45484837)}
 
-        # 7. Riwayat Game & Spent Game Riil
+        # 7. Riwayat Game & Spent Game dari Transaksi Purchases
         game_spent = []
         game_history = []
 
@@ -134,9 +134,9 @@ def api_check():
                     game_history.append({"name": loc, "icon": avatar_url})
 
         if not game_history:
-            game_history.append({"name": "Active Game Session", "icon": avatar_url})
+            game_history.append({"name": "Active Session", "icon": avatar_url})
 
-        trans_list_res = session.get(f'https://economy.roblox.com/v2/users/{user_id}/transactions?cursor=&limit=5&transactionType=Purchase', headers=headers)
+        trans_list_res = session.get(f'https://economy.roblox.com/v2/users/{user_id}/transactions?cursor=&limit=10&transactionType=Purchases', headers=headers)
         if trans_list_res.status_code == 200:
             t_data = trans_list_res.json().get('data', [])
             for t in t_data:
