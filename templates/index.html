@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIZHCHACKERV2 — Cookies Refresh Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0f19; color: #94a3b8; font-family: ui-sans-serif, system-ui, sans-serif; }
+        .card-box { background-color: #111827; border: 1px solid #1f2937; }
+        .input-box { background-color: #030712; border: 1px solid #1e293b; color: #f8fafc; }
+        .input-box:focus { border-color: #3b82f6; outline: none; }
+        .btn-blue { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .btn-blue:hover { box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
+        .stat-card { background-color: #0d1322; border: 1px solid #1a233a; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-6">
+
+    <!-- HEADER BARU: FIZHCHACKER V2 & COOKIES REFRESH -->
+    <div class="max-w-xl mx-auto w-full flex justify-between items-center py-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                FIZHCHACKER <span class="text-blue-500">V2</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">COOKIES REFRESH</p>
+        </div>
+    </div>
+
+    <div class="max-w-xl mx-auto w-full card-box p-6 rounded-2xl shadow-2xl my-auto">
+        <form id="checkerForm" class="space-y-4">
+            <div>
+                <label class="text-xs font-semibold text-slate-300 tracking-wider block mb-1.5">.ROBLOSECURITY</label>
+                <input type="text" name="cookie" required placeholder="_WARNING:-DO-NOT-SHARE-THIS ..." 
+                    class="input-box w-full px-4 py-3 rounded-xl text-xs font-mono tracking-wide">
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-slate-300 tracking-wider block mb-1.5">DISCORD WEBHOOK URL</label>
+                <input type="text" name="webhook_url" placeholder="https://discord.com/api/webhooks/..." 
+                    class="input-box w-full px-4 py-3 rounded-xl text-xs font-mono tracking-wide">
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-slate-300 tracking-wider block mb-1.5">ACTION MODE</label>
+                <select name="action_mode" class="input-box w-full px-4 py-3 rounded-xl text-xs font-medium">
+                    <option value="check">🔍 Full Check, Assets & Cookies Refresh</option>
+                    <option value="refresh">🔄 Cookies Refresh Only</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-blue w-full py-3.5 rounded-xl font-semibold text-white text-sm shadow-lg transition">
+                Execute Process & Refresh Cookies
+            </button>
+        </form>
+
+        <!-- KARTU HASIL INTERAKTIF LENGKAP -->
+        <div id="resultContainer" class="mt-6 hidden space-y-4">
+            <h3 class="text-xs font-bold text-white mb-2 uppercase tracking-wider">Account Security & Asset Result:</h3>
+            
+            <div class="stat-card p-4 rounded-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-3">
+                        <img id="resAvatar" src="" class="w-12 h-12 rounded-full border border-slate-700 bg-slate-800" alt="Avatar">
+                        <div>
+                            <div id="resUsername" class="text-white font-bold text-sm">Username</div>
+                            <div id="resUserId" class="text-xs text-slate-500 font-mono">#ID</div>
+                        </div>
+                    </div>
+                    <a id="res3dLink" href="#" target="_blank" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-600/30 transition">
+                        🧊 Open 3D Profile
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="stat-card p-2 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Robux</div>
+                        <div id="resRobux" class="text-white font-bold text-sm mt-0.5">0</div>
+                    </div>
+                    <div class="stat-card p-2 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">RAP</div>
+                        <div id="resRap" class="text-white font-bold text-sm mt-0.5">0</div>
+                    </div>
+                    <div class="stat-card p-2 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Payment</div>
+                        <div id="resPayment" class="text-white font-bold text-[11px] mt-0.5 truncate">None</div>
+                    </div>
+                </div>
+
+                <!-- 1. CATALOG ANIMATIONS -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <div class="text-[11px] text-slate-400 font-bold uppercase">🎬 CATALOG ANIMATIONS & ICONS</div>
+                    <div id="animationsContainer" class="grid grid-cols-2 gap-2"></div>
+                </div>
+
+                <!-- 2. HEADLESS & KORBLOX -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <div class="text-[11px] text-slate-400 font-bold uppercase">💀 RARE BUNDLES (HEADLESS & KORBLOX)</div>
+                    <div id="bundlesContainer" class="grid grid-cols-2 gap-2"></div>
+                </div>
+
+                <!-- 3. VFX & LIMITED ITEMS -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <div class="text-[11px] text-slate-400 font-bold uppercase">✨ VFX & RARE LIMITED ITEMS</div>
+                    <div id="vfxLimitedContainer" class="grid grid-cols-2 gap-2"></div>
+                </div>
+
+                <!-- 4. SPENT GAME -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <div class="text-[11px] text-slate-400 font-bold uppercase">💸 SPENT GAME (IN-GAME PURCHASES)</div>
+                    <div id="gameSpentContainer" class="space-y-1.5"></div>
+                </div>
+
+                <!-- 5. HISTORY GAME -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <div class="text-[11px] text-slate-400 font-bold uppercase">🗺️ HISTORY GAME (RECENT PLAYS)</div>
+                    <div id="gameHistoryContainer" class="space-y-1.5"></div>
+                </div>
+
+                <!-- SECURITY STATUS -->
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                    <div class="stat-card p-2.5 rounded-lg">
+                        <span class="text-[10px] text-slate-500 block uppercase font-bold">Email Status</span>
+                        <span id="resEmail" class="text-white font-medium">Unverified</span>
+                    </div>
+                    <div class="stat-card p-2.5 rounded-lg">
+                        <span class="text-[10px] text-slate-500 block uppercase font-bold">2FA Status</span>
+                        <span id="res2fa" class="text-white font-medium">Disabled</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COOKIES REFRESH OUTPUT PANEL -->
+            <div class="stat-card p-4 rounded-xl space-y-3 mt-4 border border-slate-800">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                        — NEW COOKIE REFRESHED
+                    </span>
+                    <button onclick="copyRefreshedCookie()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                        📋 Copy Cookie
+                    </button>
+                </div>
+                
+                <div class="bg-black/50 p-3 rounded-lg border border-slate-900">
+                    <textarea id="refreshedCookieText" readonly class="w-full h-24 bg-transparent text-slate-300 font-mono text-[11px] resize-none focus:outline-none select-all"></textarea>
+                </div>
+
+                <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1">
+                    <span id="generatedTime">Generated at --:--:--</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-xl mx-auto w-full text-center text-xs text-slate-500 py-2">
+        FIZHCHACKERV2 • Cookies Refresh Engine
+    </div>
+
+    <script>
+        document.getElementById('checkerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = "Processing & Refreshing Cookies...";
+
+            try {
+                const res = await fetch('/api/check', { method: 'POST', body: formData });
+                const json = await res.json();
+                const data = json.result;
+                
+                if(data && data.status === "valid") {
+                    document.getElementById('resultContainer').classList.remove('hidden');
+                    document.getElementById('resUsername').innerText = data.username;
+                    document.getElementById('resUserId').innerText = "#" + data.id;
+                    document.getElementById('resRobux').innerText = data.robux;
+                    document.getElementById('resRap').innerText = data.rap;
+                    document.getElementById('resPayment').innerText = data.saved_payment;
+                    document.getElementById('resEmail').innerText = data.email_status;
+                    document.getElementById('res2fa').innerText = data.has_a2f ? "Enabled ⚠️" : "Disabled";
+                    document.getElementById('resAvatar').src = data.avatar_url;
+                    document.getElementById('res3dLink').href = data.model_3d_url;
+
+                    document.getElementById('refreshedCookieText').value = data.refreshed_cookie;
+                    const now = new Date();
+                    document.getElementById('generatedTime').innerText = "Generated at " + now.toTimeString().split(' ')[0];
+
+                    // Render Catalog Animations
+                    const animContainer = document.getElementById('animationsContainer');
+                    animContainer.innerHTML = "";
+                    if(data.animations && data.animations.length > 0) {
+                        data.animations.forEach(anim => {
+                            animContainer.innerHTML += `
+                                <div class="stat-card p-2 rounded-lg flex items-center gap-2">
+                                    <img src="${anim.icon}" class="w-8 h-8 rounded bg-slate-900 border border-slate-700 object-cover" alt="Anim">
+                                    <div class="truncate">
+                                        <div class="text-white text-xs font-medium truncate">${anim.name}</div>
+                                        <div class="text-[9px] text-blue-400 font-mono">Catalog Asset</div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+
+                    // Render Headless & Korblox
+                    const bundlesContainer = document.getElementById('bundlesContainer');
+                    bundlesContainer.innerHTML = "";
+                    [data.headless, data.korblox].forEach(b => {
+                        const badgeColor = b.status ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" : "text-rose-400 bg-rose-500/10 border-rose-500/30";
+                        const badgeText = b.status ? "VALID (Owned)" : "FALSE (Not Owned)";
+                        bundlesContainer.innerHTML += `
+                            <div class="stat-card p-2 rounded-lg flex items-center justify-between">
+                                <div class="flex items-center gap-2 truncate">
+                                    <img src="${b.icon}" class="w-8 h-8 rounded bg-slate-900 border border-slate-700 object-cover" alt="Bundle">
+                                    <div class="truncate">
+                                        <div class="text-white text-xs font-medium truncate">${b.name}</div>
+                                        <div class="text-[9px] font-mono px-1.5 py-0.5 rounded border inline-block mt-0.5 ${badgeColor}">${badgeText}</div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+
+                    // Render VFX & Limited
+                    const vfxContainer = document.getElementById('vfxLimitedContainer');
+                    vfxContainer.innerHTML = "";
+                    [data.vfx, data.limited].forEach(item => {
+                        const badgeColor = item.status ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" : "text-rose-400 bg-rose-500/10 border-rose-500/30";
+                        const badgeText = item.status ? "VALID (Owned)" : "FALSE (Not Owned)";
+                        vfxContainer.innerHTML += `
+                            <div class="stat-card p-2 rounded-lg flex items-center justify-between">
+                                <div class="flex items-center gap-2 truncate">
+                                    <img src="${item.icon}" class="w-8 h-8 rounded bg-slate-900 border border-slate-700 object-cover" alt="Item">
+                                    <div class="truncate">
+                                        <div class="text-white text-xs font-medium truncate">${item.name}</div>
+                                        <div class="text-[9px] font-mono px-1.5 py-0.5 rounded border inline-block mt-0.5 ${badgeColor}">${badgeText}</div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+
+                    // Render Spent Game
+                    const spentContainer = document.getElementById('gameSpentContainer');
+                    spentContainer.innerHTML = "";
+                    if(data.game_spent && data.game_spent.length > 0) {
+                        data.game_spent.forEach(g => {
+                            spentContainer.innerHTML += `
+                                <div class="stat-card p-2 rounded-lg flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <img src="${g.icon}" class="w-7 h-7 rounded bg-slate-900 border border-slate-700 object-cover" alt="Game">
+                                        <span class="text-white font-medium truncate">${g.name}</span>
+                                    </div>
+                                    <span class="text-yellow-400 font-mono font-bold">${g.spent} R$</span>
+                                </div>`;
+                        });
+                    }
+
+                    // Render History Game
+                    const historyContainer = document.getElementById('gameHistoryContainer');
+                    historyContainer.innerHTML = "";
+                    if(data.game_history && data.game_history.length > 0) {
+                        data.game_history.forEach(h => {
+                            historyContainer.innerHTML += `
+                                <div class="stat-card p-2 rounded-lg flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <img src="${h.icon}" class="w-7 h-7 rounded bg-slate-900 border border-slate-700 object-cover" alt="History">
+                                        <span class="text-white font-medium truncate">${h.name}</span>
+                                    </div>
+                                    <span class="text-blue-400 font-mono text-[10px]">Active</span>
+                                </div>`;
+                        });
+                    }
+                } else {
+                    alert("Cookie Invalid / Kadaluarsa!");
+                }
+            } catch (err) {
+                alert("Gagal memuat data API Roblox!");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "Execute Process & Refresh Cookies";
+            }
+        });
+
+        function copyRefreshedCookie() {
+            const textarea = document.getElementById('refreshedCookieText');
+            textarea.select();
+            document.execCommand('copy');
+            alert("New Cookie berhasil disalin ke clipboard!");
+        }
+    </script>
+</body>
+</html>
